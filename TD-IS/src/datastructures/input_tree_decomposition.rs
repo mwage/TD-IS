@@ -1,32 +1,12 @@
 use std::{collections::HashMap, fs::read_to_string};
 
-use crate::vertices::Vertices;
+use super::{Bag, Vertices};
 
 #[derive(Debug)]
 pub struct InputTreeDecomposition {
     bag_indices: HashMap<String, usize>,
     bags: Vec<Bag>,
     edges: Vec<Vec<usize>>
-}
-
-#[derive(Debug)]
-pub struct Bag {
-    vertices: Vec<usize>
-}
-
-impl Bag {
-    pub fn new_empty() -> Self {
-        Bag { 
-            vertices: Vec::new()
-        }
-    }
-
-    pub fn set_vertices(&mut self, vertex_str: &str, vertices: &Vertices) {
-        let splits = vertex_str.split(";").collect::<Vec<&str>>();
-        if splits.is_empty() { return; }
-        
-        self.vertices = splits.iter().map(|vs| *vertices.get_idx(vs.trim()).unwrap()).collect();
-    }
 }
 
 impl InputTreeDecomposition {
@@ -79,5 +59,21 @@ impl InputTreeDecomposition {
             bags,
             edges
         }
+    }
+
+    pub fn edges(&self) -> &Vec<Vec<usize>> {
+        &self.edges
+    }
+
+    pub fn get_bag(&self, idx: usize) -> &Bag {
+        &self.bags[idx]
+    }
+    
+    pub fn get_idx(&self, bag_name: &str) -> Option<&usize> {
+        self.bag_indices.get(bag_name)
+    }
+
+    pub fn len(&self) -> usize {
+        self.bags.len()
     }
 }

@@ -1,12 +1,12 @@
-mod vertices;
-mod input_tree_decomposition;
+use datastructures::{TreeDecomposition, Vertices};
 
-use vertices::Vertices;
-use input_tree_decomposition::InputTreeDecomposition;
+mod datastructures;
+
 
 fn main() {
-    let vertices = Vertices::new("instances/MiniG.csv");
-    let td = InputTreeDecomposition::new("instances/MiniTD.csv", &vertices);
-    println!("{:?}", vertices);
-    println!("{:?}", td);
+    let graph_path = "instances/MiniG.csv";
+    let vertices = Vertices::new(graph_path);
+    let tds = TreeDecomposition::new("instances/MiniTD.csv", &vertices);
+    
+    println!("{:?}", tds);
 }

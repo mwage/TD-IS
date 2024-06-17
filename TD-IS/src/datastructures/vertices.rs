@@ -42,4 +42,12 @@ impl Vertices {
     pub fn get_idx(&self, vertex_name: &str) -> Option<&usize> {
         self.vertices.get(vertex_name)
     }
+
+    pub fn get_weight(&self, idx: usize) -> usize {
+        self.weights[idx]
+    }
+
+    pub fn len(&self) -> usize {
+        self.weights.len()
+    }
 }
