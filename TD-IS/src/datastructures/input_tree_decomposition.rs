@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fs::read_to_string};
 
-use super::{Bag, Vertices};
+use super::{Bag, Graph};
 
 #[derive(Debug)]
 pub struct InputTreeDecomposition {
@@ -10,7 +10,7 @@ pub struct InputTreeDecomposition {
 }
 
 impl InputTreeDecomposition {
-    pub fn new(path: &str, vertices: &Vertices) -> Self {
+    pub fn new(path: &str, graph: &Graph) -> Self {
         let mut bag_indices = HashMap::new();
         let mut bags = Vec::new();
         let mut edges = Vec::new();
@@ -51,7 +51,7 @@ impl InputTreeDecomposition {
             
             if splits.len() < 3 || splits[2].trim().is_empty() { continue; }    // Empty bag?
 
-            bags[bag_idx].set_vertices(splits[2], vertices)
+            bags[bag_idx].set_vertices(splits[2], graph)
         }
         
         InputTreeDecomposition {

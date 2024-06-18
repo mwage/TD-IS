@@ -1,6 +1,4 @@
-use std::collections::VecDeque;
-
-use super::{Bag, InputTreeDecomposition, Vertices};
+use super::{Bag, InputTreeDecomposition, Graph};
 use bit_vec::BitVec;
 
 /// A nice Tree decomposition
@@ -10,8 +8,8 @@ pub struct TreeDecomposition {
 }
 
 impl TreeDecomposition {
-    pub fn new(td_path: &str, vertices: &Vertices) -> Vec<Self> {
-        let input_td = InputTreeDecomposition::new(td_path, &vertices);
+    pub fn new(td_path: &str, graph: &Graph) -> Vec<Self> {
+        let input_td = InputTreeDecomposition::new(td_path, &graph);
         let mut tree_decompositions: Vec<TreeDecomposition> = Vec::new();
         let mut bag_treated = BitVec::from_elem(input_td.len(), false);
         for (i, v) in input_td.edges().iter().enumerate() {
@@ -48,10 +46,7 @@ impl TreeDecomposition {
         let num_neighbors = neighbors.len();
         let bag = input_td.get_bag(curr_bag);
 
-        println!("Create for node {}, {:?}", curr_bag, bag);
-
         if num_neighbors > 1 {  // Need a join node, split off first neighbor
-            println!("Create join");
             new_nodes.push(Node::new(bag.clone(), NodeType::Join, last_node));
             let last_idx = new_nodes.len() - 1;
             Self::create_nodes(input_td, bag_treated, new_nodes, leaves, curr_bag, last_idx, &[neighbors[0]]);
@@ -60,7 +55,6 @@ impl TreeDecomposition {
         }
 
         if num_neighbors == 0 { // No neighbor -> leaf node
-            println!("Create leaf");
             leaves.push(new_nodes.len());
             new_nodes.push(Node::new(bag.clone(), NodeType::Leaf, last_node));
             bag_treated.set(curr_bag, true);
@@ -71,23 +65,19 @@ impl TreeDecomposition {
         let neighbor_idx = neighbors[0];
         let neighbor = input_td.get_bag(neighbor_idx);
         let to_introduce = bag.vertices().iter().filter(|v| !neighbor.vertices().contains(*v)).map(|x| *x).collect::<Vec<usize>>();
-        println!("To introduce: {:?}", to_introduce);
         let to_forget = neighbor.vertices().iter().filter(|v| !bag.vertices().contains(*v)).map(|x| *x).collect::<Vec<usize>>();
-        println!("To forget: {:?}", to_forget);
 
         // Add introduce nodes
         let mut working_bag = bag.vertices().clone();
         let mut prev_node_idx = last_node;
         for vertex in to_introduce.into_iter() {
-            println!("Create introduce: {}", vertex);
-            new_nodes.push(Node::new(Bag::new(working_bag.clone()), NodeType::Introduce, prev_node_idx));
+            new_nodes.push(Node::new(Bag::new(working_bag.clone()), NodeType::Introduce(vertex), prev_node_idx));
             working_bag.retain(|v| *v != vertex);   // Remove element from working bag
             prev_node_idx = new_nodes.len() - 1;
         }
         // Add forget nodes
         for vertex in to_forget.into_iter() {
-            println!("Create forget: {}", vertex);
-            new_nodes.push(Node::new(Bag::new(working_bag.clone()), NodeType::Forget, prev_node_idx));
+            new_nodes.push(Node::new(Bag::new(working_bag.clone()), NodeType::Forget(vertex), prev_node_idx));
             working_bag.push(vertex);   // Remove element from working bag
             prev_node_idx = new_nodes.len() - 1;
         }
@@ -103,7 +93,8 @@ impl TreeDecomposition {
 pub struct Node {
     bag: Bag,
     node_type: NodeType,
-    next: usize
+    next: usize,
+    // TODO: Add Hashmap or vec for dyn programming
 }
 
 impl Node {
@@ -119,8 +110,8 @@ impl Node {
 #[derive(Debug)]
 enum NodeType {
     Leaf,
-    Introduce,
-    Forget,
+    Introduce(usize),
+    Forget(usize),
     Join,
     Root
 } 
