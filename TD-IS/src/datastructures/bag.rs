@@ -12,6 +12,12 @@ impl Bag {
         }
     }
 
+    pub fn new(vertices: Vec<usize>) -> Self {
+        Bag {
+            vertices
+        }
+    }
+
     pub fn set_vertices(&mut self, vertex_str: &str, vertices: &Vertices) {
         let splits = vertex_str.split(";").collect::<Vec<&str>>();
         if splits.is_empty() { return; }

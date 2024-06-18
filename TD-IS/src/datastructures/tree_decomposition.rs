@@ -21,7 +21,7 @@ impl TreeDecomposition {
         }
 
         while !bag_treated.all() {
-            // Create a new TD from the first leaf
+            // Create a new TD with the first leaf as a root
             let root_idx = match input_td.edges().iter().enumerate().find(|(i, _)| !bag_treated[*i]) {
                 Some((i, _)) => i,
                 None => panic!("No leaf left => cycle => input not a TD!")
@@ -35,27 +35,67 @@ impl TreeDecomposition {
 
     fn from_root(input_td: &InputTreeDecomposition, bag_treated: &mut BitVec, root_idx: usize) -> Self {
         let mut nodes = Vec::new();
+        let mut leaves = Vec::new();
         nodes.push(Node::new(Bag::new_empty(), NodeType::Root, usize::MAX)); // Empty dummy root node, so the rest works recursively from this
-        Self::create_nodes(input_td, bag_treated, &mut nodes, root_idx, 0, &input_td.edges()[root_idx][..]);
+        Self::create_nodes(input_td, bag_treated, &mut nodes, &mut leaves, root_idx, 0, &input_td.edges()[root_idx]);
 
         TreeDecomposition {
             nodes
         }
     }
 
-    fn create_nodes(input_td: &InputTreeDecomposition, bag_treated: &mut BitVec, new_nodes: &mut Vec<Node>, curr_bag: usize, last_node: usize, neighbors: &[usize]) {
+    fn create_nodes(input_td: &InputTreeDecomposition, bag_treated: &mut BitVec, new_nodes: &mut Vec<Node>, leaves: &mut Vec<usize>, curr_bag: usize, last_node: usize, neighbors: &[usize]) {
         let num_neighbors = neighbors.len();
+        let bag = input_td.get_bag(curr_bag);
+
+        println!("Create for node {}, {:?}", curr_bag, bag);
 
         if num_neighbors > 1 {  // Need a join node, split off first neighbor
-            new_nodes.push(Node::new(input_td.get_bag(curr_bag).clone(), NodeType::Join, last_node));
-            Self::create_nodes(input_td, bag_treated, new_nodes, curr_bag, new_nodes.len(), &[neighbors[0]]);
-            Self::create_nodes(input_td, bag_treated, new_nodes, curr_bag, new_nodes.len(), &neighbors[1..]);
+            println!("Create join");
+            new_nodes.push(Node::new(bag.clone(), NodeType::Join, last_node));
+            let last_idx = new_nodes.len() - 1;
+            Self::create_nodes(input_td, bag_treated, new_nodes, leaves, curr_bag, last_idx, &[neighbors[0]]);
+            Self::create_nodes(input_td, bag_treated, new_nodes, leaves, curr_bag, last_idx, &neighbors[1..]);
             return;
         }
 
-        // Only one neighbor, use introduce, forget, etc nodes.
+        if num_neighbors == 0 { // No neighbor -> leaf node
+            println!("Create leaf");
+            leaves.push(new_nodes.len());
+            new_nodes.push(Node::new(bag.clone(), NodeType::Leaf, last_node));
+            bag_treated.set(curr_bag, true);
+            return;
+        }
+
+        // Exactly one neighbor, use introduce, forget, etc nodes.
+        let neighbor_idx = neighbors[0];
+        let neighbor = input_td.get_bag(neighbor_idx);
+        let to_introduce = bag.vertices().iter().filter(|v| !neighbor.vertices().contains(*v)).map(|x| *x).collect::<Vec<usize>>();
+        println!("To introduce: {:?}", to_introduce);
+        let to_forget = neighbor.vertices().iter().filter(|v| !bag.vertices().contains(*v)).map(|x| *x).collect::<Vec<usize>>();
+        println!("To forget: {:?}", to_forget);
+
+        // Add introduce nodes
+        let mut working_bag = bag.vertices().clone();
+        let mut prev_node_idx = last_node;
+        for vertex in to_introduce.into_iter() {
+            println!("Create introduce: {}", vertex);
+            new_nodes.push(Node::new(Bag::new(working_bag.clone()), NodeType::Introduce, prev_node_idx));
+            working_bag.retain(|v| *v != vertex);   // Remove element from working bag
+            prev_node_idx = new_nodes.len() - 1;
+        }
+        // Add forget nodes
+        for vertex in to_forget.into_iter() {
+            println!("Create forget: {}", vertex);
+            new_nodes.push(Node::new(Bag::new(working_bag.clone()), NodeType::Forget, prev_node_idx));
+            working_bag.push(vertex);   // Remove element from working bag
+            prev_node_idx = new_nodes.len() - 1;
+        }
 
         bag_treated.set(curr_bag, true);
+
+        let neighbors = input_td.edges()[neighbor_idx].iter().filter(|v| !bag_treated[**v]).map(|x| *x).collect::<Vec<usize>>();
+        Self::create_nodes(input_td, bag_treated, new_nodes, leaves, neighbor_idx, prev_node_idx, &neighbors);
     }
 }
 
