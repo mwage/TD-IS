@@ -9,12 +9,8 @@ fn main() {
     let graph = Graph::new("instances/MiniG.csv");
     let tds = TreeDecomposition::new("instances/MiniTD.csv", &graph);
 
-    // for td in tds.iter() {
-    //     println!("{:?}", td);
-    // }
-
+    let total_obj_val = tds.iter().fold(0, |acc, td| acc + ISSolver::solve(td, &graph));
+    let solution = ISSolver::retrieve_solutions(&tds[0], &graph, total_obj_val);
     
-    let total_obj_val = tds.into_iter().fold(0, |acc, td| acc + ISSolver::solve(td, &graph));
-
-    println!("obj: {}", total_obj_val);
+    println!("obj: {}\n{}", total_obj_val, solution);
 }

@@ -68,8 +68,16 @@ impl Graph {
         }
     }
 
+    pub fn size(&self) -> usize {
+        self.weights.len()
+    }
+
     pub fn get_vertex_idx(&self, vertex_name: &str) -> Option<&usize> {
         self.vertex_indices.get(vertex_name)
+    }
+
+    pub fn get_vertex_name(&self, idx: usize) -> &String {
+        self.vertex_names.get(&idx).unwrap()
     }
 
     pub fn get_weight(&self, idx: usize) -> usize {

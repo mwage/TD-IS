@@ -1,5 +1,7 @@
 use std::{cmp, collections::HashMap};
 
+use bit_vec::BitVec;
+
 use super::{Bag, Graph, TreeDecomposition};
 
 
@@ -51,6 +53,10 @@ impl Node {
             NodeType::Root => false,
             _ => true
         }
+    }
+
+    pub fn is_leaf(&self) -> bool {
+        self.node_type == NodeType::Leaf
     }
 
     pub fn update_entries(&mut self, graph: &Graph, td: &TreeDecomposition) {
@@ -120,9 +126,71 @@ impl Node {
             NodeType::Root => {}
         };
     }
+
+    // (Set, prev idx)
+    pub fn get_solution(&self, solution: &mut Vec<usize>, rejected: &mut BitVec, curr_obj: usize, graph: &Graph, td: &TreeDecomposition) {
+        // println!("Check node: {:?}", self);
+        match self.node_type {
+            NodeType::Forget(v) => {
+                for set in self.bag.get_powerset() {
+                    if set.iter().any(|i| rejected[*i]) || self.get_weight(&set) != curr_obj { continue; }   // Skip rejected sets or ones with wrong weight
+
+                    let prev_node = td.get_node(self.prev[0]);
+                    if prev_node.get_weight(&set) == curr_obj {
+                        rejected.set(v, true);  // Same weight with forget -> cannot be part of solution
+                        td.get_node(self.prev[0]).get_solution(solution, rejected, curr_obj, graph, td);
+                    } else {
+                        // println!("[{}] - from Forget", v);
+                        if !solution.contains(&v) { solution.push(v); }
+                        td.get_node(self.prev[0]).get_solution(solution, rejected, curr_obj, graph, td);
+                    }
+                }
+            },
+            NodeType::Introduce(v) => {
+                for set in self.bag.get_powerset() {
+                    if set.iter().any(|i| rejected[*i]) || self.get_weight(&set) != curr_obj { continue; }   // Skip rejected sets or ones with wrong weight
+
+                    if set.contains(&v) {
+                        // println!("[{}] - from Introduce", v);
+                        if !solution.contains(&v) { solution.push(v); }
+                        td.get_node(self.prev[0]).get_solution(solution, rejected, curr_obj - graph.get_weight(v), graph, td);
+                    } else {
+                        rejected.set(v, true);
+                        td.get_node(self.prev[0]).get_solution(solution, rejected, curr_obj, graph, td);
+                    }
+                }
+            },
+            NodeType::Join => {
+                for set in self.bag.get_powerset() {
+                    if set.iter().any(|i| rejected[*i]) || self.get_weight(&set) != curr_obj { continue; }   // Skip rejected sets or ones with wrong weight
+
+                    let left_weight = td.get_node(self.prev[0]).get_weight(&set);
+                    let right_weight = td.get_node(self.prev[1]).get_weight(&set);
+                    if left_weight == curr_obj {
+                        // println!("{:?} - left from Join", set);
+                        set.iter().for_each(|v| if !solution.contains(v) { solution.push(*v); });                        
+                        self.bag.vertices().iter().for_each(|v| if !set.contains(v) { rejected.set(*v, true) });
+                        td.get_node(self.prev[0]).get_solution(solution, rejected, curr_obj, graph, td);
+                    } else if right_weight == curr_obj {
+                        // println!("{:?} - right from Join", set);
+                        set.iter().for_each(|v| if !solution.contains(v) { solution.push(*v); });      
+                        self.bag.vertices().iter().for_each(|v| if !set.contains(v) { rejected.set(*v, true) });                        
+                        td.get_node(self.prev[1]).get_solution(solution, rejected, curr_obj, graph, td);
+                    } else if left_weight + right_weight - graph.get_weight_of_set(&set) == curr_obj{
+                        // println!("{:?} - combined from Join", set);
+                        set.iter().for_each(|v| if !solution.contains(v) { solution.push(*v); });
+                        self.bag.vertices().iter().for_each(|v| if !set.contains(v) { rejected.set(*v, true) });
+                        td.get_node(self.prev[0]).get_solution(solution, rejected, left_weight, graph, td);
+                        td.get_node(self.prev[1]).get_solution(solution, rejected, right_weight, graph, td);
+                    };
+                }
+            },
+            _ => {}
+        }
+    }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum NodeType {
     Leaf,
     Introduce(usize),
