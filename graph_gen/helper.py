@@ -1,5 +1,6 @@
-from sage.graphs.graph import Graph
+from sage.all import *
 from sage import graphs
+from sage.graphs.graph import Graph
 from sage.graphs.graph_decompositions.tree_decomposition import TreelengthConnected
 from random import *
 
