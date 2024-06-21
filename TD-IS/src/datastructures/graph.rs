@@ -3,6 +3,7 @@ use std::{collections::HashMap, fs::read_to_string};
 #[derive(Debug)]
 pub struct Graph {
     vertex_indices: HashMap<String, usize>,
+    vertex_names: HashMap<usize, String>,
     edges: Vec<Vec<usize>>, // Replace with Bitvec after completing parsing?
     weights: Vec<usize>
 }
@@ -10,6 +11,7 @@ pub struct Graph {
 impl Graph {
     pub fn new(path: &str) -> Self {
         let mut vertex_indices = HashMap::new();
+        let mut vertex_names = HashMap::new();
         let mut weights = Vec::new();
         let mut edges = Vec::new();
         for line in read_to_string(path).unwrap().lines() {
@@ -21,6 +23,7 @@ impl Graph {
 
             if !vertex_indices.contains_key(vertex_name) {
                 vertex_indices.insert(vertex_name.to_string(), weights.len());
+                vertex_names.insert(weights.len(), vertex_name.to_string());
                 weights.push(0);
                 edges.push(Vec::new());
             }
@@ -32,9 +35,10 @@ impl Graph {
             // Edge entry
             let second_vertex_name = splits[1].trim();
             if !second_vertex_name.is_empty() {
-                // Add second bag if first occurrence
+                // Add second vertex if first occurrence
                 if !vertex_indices.contains_key(second_vertex_name) {
                     vertex_indices.insert(second_vertex_name.to_string(), weights.len());
+                    vertex_names.insert(weights.len(), second_vertex_name.to_string());
                     weights.push(0);
                     edges.push(Vec::new());
                 }
@@ -46,7 +50,7 @@ impl Graph {
                 continue;   // We don't need edge labels
             }
 
-            if splits.len() < 3 || !splits[1].trim().is_empty() || splits[2].trim().is_empty() { continue; }    // Edge entry, irrelevant for the original graph for us, we only need weights
+            if splits.len() < 3 || splits[2].trim().is_empty() { continue; }
 
             match splits[2].parse::<usize>() {
                 Ok(res) => weights[vertex_indices[vertex_name]] = res,
@@ -58,6 +62,7 @@ impl Graph {
         
         Graph {
             vertex_indices,
+            vertex_names,
             weights,
             edges
         }
@@ -71,11 +76,15 @@ impl Graph {
         self.weights[idx]
     }
 
-    pub fn len(&self) -> usize {
-        self.weights.len()
+    pub fn get_weight_of_set(&self, set: &Vec<usize>) -> usize {
+        set.iter().fold(0, |acc, i| acc + self.weights[*i])
     }
 
-    pub fn edges(&self) -> &Vec<Vec<usize>> {
-        &self.edges
+    pub fn is_neighbor(&self, vertex: usize, others: &Vec<usize>) -> bool {
+        self.edges[vertex].iter().any(|x| others.contains(x))
+    }
+
+    pub fn is_is(&self, vertices: &Vec<usize>) -> bool {
+        vertices.iter().all(|x| !self.is_neighbor(*x, vertices))
     }
 }

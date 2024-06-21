@@ -4,7 +4,6 @@ use super::{Bag, Graph};
 
 #[derive(Debug)]
 pub struct InputTreeDecomposition {
-    bag_indices: HashMap<String, usize>,
     bags: Vec<Bag>,
     edges: Vec<Vec<usize>>
 }
@@ -55,7 +54,6 @@ impl InputTreeDecomposition {
         }
         
         InputTreeDecomposition {
-            bag_indices,
             bags,
             edges
         }
@@ -69,10 +67,6 @@ impl InputTreeDecomposition {
         &self.bags[idx]
     }
     
-    pub fn get_idx(&self, bag_name: &str) -> Option<&usize> {
-        self.bag_indices.get(bag_name)
-    }
-
     pub fn len(&self) -> usize {
         self.bags.len()
     }

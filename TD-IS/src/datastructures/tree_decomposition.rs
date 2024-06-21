@@ -1,10 +1,14 @@
-use super::{Bag, InputTreeDecomposition, Graph};
+use std::cell::{Ref, RefCell, RefMut};
+
+use super::*;
 use bit_vec::BitVec;
+use itertools::Itertools;
 
 /// A nice Tree decomposition
 #[derive(Debug)]
 pub struct TreeDecomposition {
-    nodes: Vec<Node>
+    nodes: Vec<RefCell<Node>>,
+    leaves: Vec<usize>
 }
 
 impl TreeDecomposition {
@@ -19,7 +23,7 @@ impl TreeDecomposition {
         }
 
         while !bag_treated.all() {
-            // Create a new TD with the first leaf as a root
+            // Create a new TD with the first untreated node as a root
             let root_idx = match input_td.edges().iter().enumerate().find(|(i, _)| !bag_treated[*i]) {
                 Some((i, _)) => i,
                 None => panic!("No leaf left => cycle => input not a TD!")
@@ -31,6 +35,18 @@ impl TreeDecomposition {
         tree_decompositions
     }
 
+    pub fn get_node(&self, idx: usize) -> Ref<Node> {
+        self.nodes[idx].borrow()
+    }
+
+    pub fn get_node_mut(&self, idx: usize) -> RefMut<Node> {
+        self.nodes[idx].borrow_mut()
+    }
+
+    pub fn leaves(&self) -> &Vec<usize> {
+        &self.leaves
+    }
+
     fn from_root(input_td: &InputTreeDecomposition, bag_treated: &mut BitVec, root_idx: usize) -> Self {
         let mut nodes = Vec::new();
         let mut leaves = Vec::new();
@@ -38,7 +54,8 @@ impl TreeDecomposition {
         Self::create_nodes(input_td, bag_treated, &mut nodes, &mut leaves, root_idx, 0, &input_td.edges()[root_idx]);
 
         TreeDecomposition {
-            nodes
+            nodes: nodes.into_iter().map(|node| RefCell::new(node)).collect_vec(),
+            leaves
         }
     }
 
@@ -49,6 +66,7 @@ impl TreeDecomposition {
         if num_neighbors > 1 {  // Need a join node, split off first neighbor
             new_nodes.push(Node::new(bag.clone(), NodeType::Join, last_node));
             let last_idx = new_nodes.len() - 1;
+            new_nodes[last_node].add_to_prev(last_idx);
             Self::create_nodes(input_td, bag_treated, new_nodes, leaves, curr_bag, last_idx, &[neighbors[0]]);
             Self::create_nodes(input_td, bag_treated, new_nodes, leaves, curr_bag, last_idx, &neighbors[1..]);
             return;
@@ -57,6 +75,8 @@ impl TreeDecomposition {
         if num_neighbors == 0 { // No neighbor -> leaf node
             leaves.push(new_nodes.len());
             new_nodes.push(Node::new(bag.clone(), NodeType::Leaf, last_node));
+            let last_idx = new_nodes.len() - 1;
+            new_nodes[last_node].add_to_prev(last_idx);
             bag_treated.set(curr_bag, true);
             return;
         }
@@ -73,13 +93,17 @@ impl TreeDecomposition {
         for vertex in to_introduce.into_iter() {
             new_nodes.push(Node::new(Bag::new(working_bag.clone()), NodeType::Introduce(vertex), prev_node_idx));
             working_bag.retain(|v| *v != vertex);   // Remove element from working bag
+            let last_idx = prev_node_idx;
             prev_node_idx = new_nodes.len() - 1;
+            new_nodes[last_idx].add_to_prev(prev_node_idx);
         }
         // Add forget nodes
         for vertex in to_forget.into_iter() {
             new_nodes.push(Node::new(Bag::new(working_bag.clone()), NodeType::Forget(vertex), prev_node_idx));
             working_bag.push(vertex);   // Remove element from working bag
+            let last_idx = prev_node_idx;
             prev_node_idx = new_nodes.len() - 1;
+            new_nodes[last_idx].add_to_prev(prev_node_idx);
         }
 
         bag_treated.set(curr_bag, true);
@@ -88,30 +112,3 @@ impl TreeDecomposition {
         Self::create_nodes(input_td, bag_treated, new_nodes, leaves, neighbor_idx, prev_node_idx, &neighbors);
     }
 }
-
-#[derive(Debug)]
-pub struct Node {
-    bag: Bag,
-    node_type: NodeType,
-    next: usize,
-    // TODO: Add Hashmap or vec for dyn programming
-}
-
-impl Node {
-    pub fn new(bag: Bag, node_type: NodeType, next: usize) -> Self {
-        Node {
-            bag,
-            node_type,
-            next
-        }
-    }
-}
-
-#[derive(Debug)]
-enum NodeType {
-    Leaf,
-    Introduce(usize),
-    Forget(usize),
-    Join,
-    Root
-} 

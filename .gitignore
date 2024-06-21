@@ -15,3 +15,4 @@ Cargo.lock
 
 # Project related
 literature/
+*.bak

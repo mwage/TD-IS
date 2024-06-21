@@ -1,4 +1,5 @@
 use super::Graph;
+use itertools::Itertools;
 
 #[derive(Debug, Clone)]
 pub struct Bag {
@@ -27,5 +28,9 @@ impl Bag {
 
     pub fn vertices(&self) -> &Vec<usize> {
         &self.vertices
+    }
+
+    pub fn get_powerset(&self) -> Vec<Vec<usize>> {
+        (0..self.vertices.len() + 1).flat_map(|i| self.vertices.iter().map(|x| *x).combinations(i)).collect()
     }
 }
