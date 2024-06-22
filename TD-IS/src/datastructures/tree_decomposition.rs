@@ -101,6 +101,7 @@ impl TreeDecomposition {
         for vertex in to_forget.into_iter() {
             new_nodes.push(Node::new(Bag::new(working_bag.clone()), NodeType::Forget(vertex), prev_node_idx));
             working_bag.push(vertex);   // Remove element from working bag
+            working_bag.sort();
             let last_idx = prev_node_idx;
             prev_node_idx = new_nodes.len() - 1;
             new_nodes[last_idx].add_to_prev(prev_node_idx);

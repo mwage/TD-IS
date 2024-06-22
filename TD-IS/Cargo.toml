@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 bit-vec = "*"
 itertools = "0.13.0"
+rustc-hash = "2.0.0"

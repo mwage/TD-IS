@@ -1,17 +1,20 @@
-use std::{collections::HashMap, fs::read_to_string};
+use std::fs::read_to_string;
+
+use rustc_hash::FxHashMap;
 
 #[derive(Debug)]
 pub struct Graph {
-    vertex_indices: HashMap<String, usize>,
-    vertex_names: HashMap<usize, String>,
+    vertex_indices: FxHashMap<String, usize>,
+    vertex_names: FxHashMap<usize, String>,
     edges: Vec<Vec<usize>>, // Replace with Bitvec after completing parsing?
     weights: Vec<usize>
 }
 
 impl Graph {
     pub fn new(path: &str) -> Self {
-        let mut vertex_indices = HashMap::new();
-        let mut vertex_names = HashMap::new();
+        eprintln!("Parsing graph from {}", path);
+        let mut vertex_indices = FxHashMap::default();
+        let mut vertex_names = FxHashMap::default();
         let mut weights = Vec::new();
         let mut edges = Vec::new();
         for line in read_to_string(path).unwrap().lines() {

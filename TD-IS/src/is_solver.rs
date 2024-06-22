@@ -1,5 +1,3 @@
-use std::collections::VecDeque;
-
 use bit_vec::BitVec;
 use itertools::Itertools;
 
@@ -36,7 +34,10 @@ impl ISSolver {
         let mut solution = Vec::new();
         let mut rejected = BitVec::from_elem(graph.size(), false);
         td.get_node(1).get_solution(&mut solution, &mut rejected, obj_val, graph, td);
-
+        solution.sort();
+        // println!("rej: {:?}", rejected);
+        assert!(graph.is_is(&solution));
+        assert_eq!(graph.get_weight_of_set(&solution), obj_val);
         solution.iter().map(|v| graph.get_vertex_name(*v)).join(",")
     }
 }

@@ -24,6 +24,7 @@ impl Bag {
         if splits.is_empty() { return; }
         
         self.vertices = splits.iter().map(|vs| *graph.get_vertex_idx(vs.trim()).unwrap()).collect();
+        self.vertices.sort();
     }
 
     pub fn vertices(&self) -> &Vec<usize> {

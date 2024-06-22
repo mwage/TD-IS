@@ -1,6 +1,7 @@
-use std::{collections::HashMap, fs::read_to_string};
+use std::fs::read_to_string;
 
 use super::{Bag, Graph};
+use rustc_hash::FxHashMap;
 
 #[derive(Debug)]
 pub struct InputTreeDecomposition {
@@ -10,7 +11,8 @@ pub struct InputTreeDecomposition {
 
 impl InputTreeDecomposition {
     pub fn new(path: &str, graph: &Graph) -> Self {
-        let mut bag_indices = HashMap::new();
+        eprintln!("Parsing treedecomposition from {}", path);
+        let mut bag_indices = FxHashMap::default();
         let mut bags = Vec::new();
         let mut edges = Vec::new();
         for line in read_to_string(path).unwrap().lines() {
