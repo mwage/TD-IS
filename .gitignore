@@ -16,3 +16,4 @@ Cargo.lock
 # Project related
 literature/
 *.bak
+__pycache__/
