@@ -46,9 +46,6 @@ def create_instance(num_vertices, density, upper_weight, name):
     g_str = get_graph_str(g, weights)
     td_str = get_td_str(g)
 
-    print(g_str)
-    print(td_str)
-
     with open(f"../TD-IS/instances/{name}G.csv", "w") as text_file:
         text_file.write(g_str)
     with open(f"../TD-IS/instances/{name}TD.csv", "w") as text_file:
